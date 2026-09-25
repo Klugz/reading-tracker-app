@@ -1,0 +1,2 @@
+ALTER TABLE `reading_deadline_events` ADD `operation_id` text REFERENCES reading_deadline_events(id);--> statement-breakpoint
+ALTER TABLE `reading_deadline_events` ADD `consolidation` integer DEFAULT 0 NOT NULL;

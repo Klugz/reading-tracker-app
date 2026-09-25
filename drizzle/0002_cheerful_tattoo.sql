@@ -1,0 +1,1 @@
+ALTER TABLE `books` ADD `personal_completed_at` text;
