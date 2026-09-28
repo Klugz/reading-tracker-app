@@ -136,3 +136,16 @@ export const accountEvents=sqliteTable('student_account_events',{
  id:text('id').primaryKey(),studentId:text('student_id').notNull().references(()=>users.id),teacherId:text('teacher_id').notNull().references(()=>users.id),
  action:text('action').notNull(),detail:text('detail').notNull(),createdAt:text('created_at').notNull(),
 },t=>[index('idx_student_account_events_student').on(t.studentId)]);
+
+export const teacherAccounts=sqliteTable('teacher_accounts',{
+ teacherId:text('teacher_id').primaryKey().references(()=>users.id),
+ email:text('email').notNull().unique(),passwordHash:text('password_hash').notNull(),
+ active:integer('active').notNull().default(1),authVersion:integer('auth_version').notNull().default(0),
+});
+export const teacherSessions=sqliteTable('teacher_sessions',{
+ tokenHash:text('token_hash').primaryKey(),teacherId:text('teacher_id').notNull().references(()=>users.id),
+ authVersion:integer('auth_version').notNull(),expiresAt:integer('expires_at').notNull(),createdAt:text('created_at').notNull(),
+},t=>[index('idx_teacher_sessions_teacher').on(t.teacherId),index('idx_teacher_sessions_expiry').on(t.expiresAt)]);
+export const teacherLoginAttempts=sqliteTable('teacher_login_attempts',{
+ key:text('key').primaryKey(),count:integer('count').notNull(),expiresAt:integer('expires_at').notNull(),
+},t=>[index('idx_teacher_login_expiry').on(t.expiresAt)]);

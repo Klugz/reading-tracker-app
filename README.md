@@ -4,7 +4,7 @@ Aplicação de acompanhamento de leitura para professores e alunos, com priorida
 
 ## Começar a usar
 
-1. O professor entra com ChatGPT e informa seu nome no primeiro acesso.
+1. O professor abre **/entrar/professor** e entra com e-mail e senha. As migrações `0007` e `0008` configuram o perfil Henrique Klug com o e-mail `henriqueklug@gmail.com` e a senha inicial configurada pelo proprietário.
 2. Em **Alunos → Adicionar aluno**, informa nome completo e matrícula. E-mail e seleção de turmas são opcionais.
 3. O professor informa ao aluno a matrícula e a senha inicial **EDU123**. Nenhuma mensagem externa é enviada automaticamente.
 4. O aluno abre **/entrar**, informa matrícula e senha inicial e cria uma senha pessoal de 8 a 128 caracteres. Nenhuma leitura ou dado escolar fica disponível antes da troca.
@@ -38,7 +38,7 @@ A audiência do site permanece privada, como na versão anterior. Essa barreira 
 - `lib/classroom/accounts.ts`: gestão administrativa, matrícula e vínculos.
 - `lib/classroom/student-auth.ts` e `passwords.ts`: sessões, limitação de tentativas e hashes de senha.
 - `app/professor/page.tsx`, `app/professor/turmas/page.tsx`, `app/professor/turmas/[id]/page.tsx` e `app/aluno/page.tsx`: rotas protegidas por identidade e papel.
-- `app/chatgpt-auth.ts`: autenticação gerenciada pela plataforma; usa os cabeçalhos de identidade confiáveis fornecidos pelo dispatcher.
+- `lib/classroom/teacher-auth.ts` e `app/api/teacher-auth/[action]/route.ts`: login do professor com e-mail, hash scrypt, sessões de 8 horas, limite de tentativas e logout. Cabeçalhos ChatGPT não concedem acesso ao aplicativo.
 - `app/api/classroom/route.ts`: leitura de dados autorizados e comandos de escrita validados.
 - `app/api/books/route.ts` e `app/api/goals/route.ts`: endpoints legados protegidos, sem identificação por localStorage ou `x-reader-id`.
 - `lib/classroom/service.ts`: validação Zod, regras de negócio e consultas SQL preparadas. A identidade é fornecida pelo servidor, nunca pelo corpo do comando.
@@ -46,7 +46,7 @@ A audiência do site permanece privada, como na versão anterior. Essa barreira 
 - `components/classroom/`: interface compartilhada, formulários, detalhes e apresentação específica por perfil.
 - `db/schema.ts` e `drizzle/`: usuários, vínculo professor-aluno, turmas, membros, livros da turma, livros, atribuições individuais, eventos e metas.
 
-Professores podem criar seu próprio perfil no primeiro acesso. Não há aprovação institucional de professores nesta versão. Novos alunos são criados apenas pelo professor. Nenhuma conta pode alterar seu papel depois de criada. O acesso de professor continua usando autenticação ChatGPT. Professores só consultam alunos vinculados e as atribuições sob sua responsabilidade. Alunos recebem apenas a identificação de suas turmas e suas próprias participações, sem nomes, progresso ou histórico de colegas. Não recebem livros administrativos nem leituras de outras contas. Cada mutação valida papel e propriedade no servidor. Dados privados usam `Cache-Control: no-store`, e escritas de origem cruzada são recusadas.
+As contas de professor são previamente cadastradas; não há cadastro público. Novos alunos são criados apenas pelo professor. Nenhuma conta pode alterar seu papel depois de criada. O acesso de professor usa e-mail e senha com cookie HttpOnly/Secure/SameSite=Strict. Professores só consultam alunos vinculados e as atribuições sob sua responsabilidade. Alunos recebem apenas a identificação de suas turmas e suas próprias participações, sem nomes, progresso ou histórico de colegas. Não recebem livros administrativos nem leituras de outras contas. Cada mutação valida papel e propriedade no servidor. Dados privados usam `Cache-Control: no-store`, e escritas de origem cruzada são recusadas.
 
 O progresso usa controle de versão otimista, e a atualização e o evento são persistidos em uma transação. Eventos não são editáveis. Leituras concluídas não são reabertas. O diário registra o avanço declarado pelo aluno, sem pretender comprovar a leitura do conteúdo.
 
@@ -97,3 +97,7 @@ Em ambiente managed-linux, use a prévia supervisionada de Sites. Para mudanças
 Os 38 testes usam SQLite em memória e um adaptador D1, exercitando a camada de serviço real: preservação de dados legados, autenticação obrigatória, papéis imutáveis, isolamento entre alunos e professores, atribuição em lote e duplicatas, início e conclusão, histórico, concorrência, validação de datas e progresso, edição e remoção de livros e privacidade de metas. Incluem autenticação por matrícula, hashes, primeiro acesso, reset, desativação, expiração e revogação de sessões, preservação do histórico na correção da matrícula e migração de alunos existentes, além de múltiplas turmas, resumo, idempotência por origem, mudanças de membros, arquivamento, restauração, exclusão com histórico e rollback de distribuição concorrente. Não substituem testes visuais nem uma sessão de ponta a ponta com duas contas autenticadas na plataforma.
 
 WebMCP fornece ações de consulta, atribuição e progresso quando o navegador disponibiliza `document.modelContext`. Os mesmos comandos e validações da interface são reutilizados. A verificação dessa integração em navegador não ficou disponível neste ambiente.
+
+## Login local do professor
+
+Aplique todas as migrações, incluindo `0007`, antes de usar `/entrar/professor`. O login local usa a mesma autenticação por senha da aplicação publicada; não há login simulado do ChatGPT. A conta inicial é criada apenas pela migração, com hash scrypt persistido, sem redefinição automática em reinícios. Contas e dados de professores antigos são preservados, mas não são reassociados automaticamente à conta nova. A barreira de audiência da hospedagem Sites é independente deste login.

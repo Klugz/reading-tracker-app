@@ -5,7 +5,7 @@ Os testes usam dados sintéticos e bancos isolados. Não acessam dados de produ�
 ## Verificações automatizadas
 
 ```sh
-node --test tests/classroom.test.mjs tests/ux-regressions.test.mjs
+node --test tests/classroom.test.mjs tests/ux-regressions.test.mjs tests/teacher-auth.test.mjs
 pnpm exec tsc --noEmit --incremental false
 pnpm build
 node tests/worker-smoke.mjs
@@ -15,7 +15,7 @@ node tests/http-journeys.mjs
 - `classroom.test.mjs`: serviços, regras de acesso, matrícula, concorrência, vínculos, distribuição, progresso e histórico.
 - `ux-regressions.test.mjs`: lógica de reconciliação de rascunhos, destinos de retorno, projeção do histórico e migração sobre dados existentes. Não simula cliques nem layout.
 - `worker-smoke.mjs`: serviços executados em Worker com D1 isolado.
-- `http-journeys.mjs`: utiliza o build em `dist/`, carrega os módulos reais e chama rotas HTTP da aplicação. Verifica cookies, redirecionamentos, primeiro acesso, autorização, atribuição e progresso. Os cabeçalhos de professor são uma fixture da fronteira de autenticação do ambiente isolado; o código de autenticação publicado não é alterado.
+- `http-journeys.mjs`: utiliza o build em `dist/`, carrega os módulos reais e chama rotas HTTP da aplicação. Verifica cookies, redirecionamentos, primeiro acesso, autorização, atribuição e progresso. O professor entra com a conta inicial por e-mail e senha; cabeçalhos de identidade ChatGPT são rejeitados.
 
 ## Homologação visual pendente
 

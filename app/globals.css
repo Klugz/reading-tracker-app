@@ -61,3 +61,18 @@
 .book-open:hover h3{text-decoration:underline;text-underline-offset:.2em}
 .book-open:focus-visible,.reading-row:focus-visible,.table-name:focus-visible,.class-book-card:focus-visible,.activity-list button:focus-visible{outline:3px solid #4262d7;outline-offset:4px}
 @media(max-height:480px){.reader-dialog .form-actions{position:static;margin-bottom:0}.reader-dialog,.reader-alert{max-height:calc(100dvh - .5rem)}}
+
+/* Both mounted panels share their rows, preserving dimensions and input drafts. */
+.login-tabs{gap:1.5rem}
+.login-tab-list{width:100%;height:2.75rem!important;background:#edf1fa}
+.login-tab-list [data-slot=tabs-trigger]{transition:background-color 160ms ease,color 160ms ease,box-shadow 160ms ease}
+.login-tab-list [data-state=active]{background:#fff;color:#304fbb;font-weight:700}
+.login-panels{display:grid;grid-template-rows:repeat(5,auto)}
+.login-panel{grid-column:1;grid-row:1 / span 5;display:grid;grid-template-rows:subgrid;min-width:0}
+.login-panel[data-state=inactive]{visibility:hidden;pointer-events:none}
+.login-panel[data-state=active]{animation:login-panel-in 160ms ease-out}
+.login-panel .eyebrow{margin-top:1rem}
+.login-description{color:#63728b;min-height:3em}
+.login-help{color:#5d6b83;min-height:3em}
+@keyframes login-panel-in{from{opacity:.35}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){.login-panel[data-state=active]{animation:none}.login-tab-list [data-slot=tabs-trigger]{transition:none}}

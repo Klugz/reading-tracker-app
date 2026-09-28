@@ -11,13 +11,13 @@ const {Miniflare}=require('miniflare');
 const files=(await readdir('dist/server',{recursive:true})).filter(f=>f.endsWith('.js')||f.endsWith('.mjs'));
 const modules=['index.js',...files.filter(f=>f!=='index.js')].map(path=>({type:'ESModule',path:resolve('dist/server',path)}));
 const mf=new Miniflare({modules,modulesRoot:resolve('dist/server'),compatibilityDate:'2026-05-15',compatibilityFlags:['nodejs_compat'],d1Databases:['DB'],assets:{directory:resolve('dist/client'),binding:'ASSETS',routerConfig:{has_user_worker:true,invoke_user_worker_ahead_of_assets:true}}});
-const teacher={'oai-authenticated-user-id':'http-teacher','oai-authenticated-user-email':'teacher@example.test'};
+const teacher={};
 let assertions=0;
 const check=(condition,message)=>{assert.ok(condition,message);assertions++;};
 async function request(path,{body,headers={},cookie,status=200}={}){
  const response=await mf.dispatchFetch('https://classroom.test'+path,{method:body?'POST':'GET',redirect:'manual',headers:{...headers,...(body?{'Content-Type':'application/json',Origin:'https://classroom.test'}:{}),...(cookie?{Cookie:cookie}:{})},body:body?JSON.stringify(body):undefined});
  const text=await response.text();assert.equal(response.status,status,`${path}: ${text.slice(0,300)}`);assertions++;
- return {response,text,json:response.headers.get('content-type')?.includes('application/json')?JSON.parse(text):null,cookie:response.headers.get('set-cookie')?.split(';')[0]};
+ return {response,text,json:response.headers.get('content-type')?.includes('application/json')?JSON.parse(text):null,cookie:response.headers.getSetCookie().find(c=>!c.includes('Max-Age=0'))?.split(';')[0]};
 }
 const mutation=(body,options={})=>request('/api/classroom',{body,headers:teacher,...options});
 try{
@@ -25,7 +25,12 @@ try{
  for(const file of (await readdir('drizzle')).filter(f=>f.endsWith('.sql')).sort())for(const statement of (await readFile('drizzle/'+file,'utf8')).split(';').map(s=>s.replaceAll('--> statement-breakpoint','').trim()).filter(Boolean))await db.prepare(statement).run();
  await request('/api/classroom',{status:401});
  const entry=await request('/entrar');check(entry.text.includes('matrícula')||entry.text.includes('Matrícula'),'login page rendered');
- await mutation({action:'onboard',name:'Professor HTTP',role:'teacher'});
+ await request('/api/classroom',{headers:{'oai-authenticated-user-id':'teacher-henrique-klug','oai-authenticated-user-email':'henriqueklug@gmail.com'},status:401});
+ await request('/api/teacher-auth/login',{body:{email:'henriqueklug@gmail.com',password:'wrong'},status:401});
+ await request('/api/teacher-auth/login',{body:{email:'henriqueklug@gmail.com',password:'admin'},headers:{'sec-fetch-site':'cross-site'},status:403});
+ const teacherLogin=await request('/api/teacher-auth/login',{body:{email:'henriqueklug@gmail.com',password:'admin'}});
+ teacher.Cookie=teacherLogin.cookie;
+ check(teacherLogin.json.redirect==='/professor','teacher login redirects to dashboard');
  const group=(await mutation({action:'saveClass',name:'Turma HTTP'})).json;
  const secondGroup=(await mutation({action:'saveClass',name:'Outra turma HTTP'})).json;
  await mutation({action:'createStudent',name:'Mesmo Nome',enrollment:'9070001',classIds:[group.id]});
@@ -72,6 +77,9 @@ try{
  await request('/api/classroom',{cookie,status:401});
  login=await request('/api/student-auth/login',{body:{enrollment:'9070001',password:'EDU123'}});check(login.json.redirect==='/aluno/nova-senha','reset restores password gate');
  await request('/api/student-auth/logout',{cookie:login.cookie,body:{}});await request('/api/classroom',{cookie:login.cookie,status:401});
+ await request('/api/teacher-auth/logout',{headers:teacher,body:{}});
+ await request('/api/classroom',{headers:teacher,status:401});
+ const teacherGate=await request('/professor',{status:307});check(teacherGate.response.headers.get('location')==='/entrar/professor','teacher page requires password sign-in');
  check((await db.prepare('PRAGMA foreign_key_check').all()).results.length===0,'foreign key integrity');
  process.stdout.write(`HTTP journeys passed: ${assertions} assertions using compiled routes, isolated D1 and actual session cookies. Browser/visual QA not included.\n`);
 }finally{await mf.dispose();}
